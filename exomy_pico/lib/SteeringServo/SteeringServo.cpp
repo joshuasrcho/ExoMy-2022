@@ -7,9 +7,13 @@
 const int servo_pwm_wrap = 65465;
 const float servo_clk_div = 38.1875;
 
-SteeringServo::SteeringServo(int pin){
-    // SET pin to PWM
+SteeringServo::SteeringServo(int pin, int pwm_neutral, int pwm_range){
+
     servo_pin = pin;
+    steer_pwm_neutral = pwm_neutral;
+    steer_pwm_range = pwm_range;
+
+    // SET pin to PWM
     gpio_set_function(servo_pin, GPIO_FUNC_PWM);
     // Figure out which slice we just connected to the pin
     uint slice_num = pwm_gpio_to_slice_num(servo_pin);
@@ -22,6 +26,8 @@ SteeringServo::SteeringServo(int pin){
     
     // Load the configuration into our PWM slice, and set it running.
     pwm_init(slice_num, &config, true);
+
+    writePulse(steer_pwm_neutral);
 }
 
 void SteeringServo::writePulse(int micros){
@@ -29,3 +35,9 @@ void SteeringServo::writePulse(int micros){
     // period is 20ms = 20000 microsecond
     pwm_set_gpio_level(servo_pin, (micros/20000.f)*servo_pwm_wrap);
 }
+
+void SteeringServo::setSteering(float angle){
+    int micros = (int)(steer_pwm_neutral + angle/90.0 * steer_pwm_range);
+    writePulse(micros);
+}
+
